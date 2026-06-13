@@ -1,0 +1,1439 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Bolo de Pote da Manu</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Inter:wght@400;500;600;700&display=swap');
+
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --pk:#e879a0;--pk2:#be185d;--pk3:#9d174d;
+  --dark:#08030a;--mid:#120810;--rich:#1e0f1a;
+  --gold:#d97706;--gold2:#fbbf24;
+  --red:#dc2626;--redglow:rgba(220,38,38,0.4);
+  --text:#f0e6ec;--sub:#c084a0;--muted:#7a5068;
+  --glitch1:#ff2d55;--glitch2:#00fff0;
+  --trans:all 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+
+html,body{width:100%;height:100%;overflow:hidden;background:#08030a;}
+
+/* ═══ GAME CONTAINER ═══ */
+#G{width:100vw;height:100vh;position:relative;overflow:hidden;background:#08030a;cursor:default;}
+
+/* ═══ NOISE OVERLAY ═══ */
+#G::before{
+  content:'';position:absolute;inset:0;z-index:300;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  opacity:0.35;mix-blend-mode:overlay;
+}
+
+/* ═══ SCANLINES ═══ */
+#G::after{
+  content:'';position:absolute;inset:0;z-index:299;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.06) 3px,rgba(0,0,0,0.06) 4px);
+}
+
+/* ═══════════════════════════════════
+   LOADING
+═══════════════════════════════════ */
+#loading{
+  position:absolute;inset:0;z-index:900;
+  background:#08030a;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;
+  transition:opacity 1.2s ease;
+}
+.load-logo{
+  font-family:'Crimson Pro',serif;font-size:clamp(1.8rem,4vw,2.8rem);
+  color:var(--pk);letter-spacing:0.15em;font-weight:700;
+  text-shadow:0 0 60px rgba(232,121,160,0.6),0 0 120px rgba(232,121,160,0.2);
+  margin-bottom:0.3rem;
+  animation:breathe 3s ease infinite;
+}
+@keyframes breathe{0%,100%{text-shadow:0 0 60px rgba(232,121,160,0.6),0 0 120px rgba(232,121,160,0.2);}50%{text-shadow:0 0 80px rgba(232,121,160,0.9),0 0 160px rgba(232,121,160,0.4);}}
+.load-sub{color:var(--muted);font-size:0.75rem;letter-spacing:0.3em;margin-bottom:3rem;font-family:'Inter',sans-serif;}
+.load-bar-wrap{width:min(320px,70vw);height:2px;background:rgba(255,255,255,0.06);border-radius:99px;overflow:hidden;margin-bottom:0.8rem;}
+.load-bar{height:100%;width:0;background:linear-gradient(90deg,var(--pk2),var(--pk),var(--gold2));border-radius:99px;transition:width 0.4s ease;box-shadow:0 0 12px rgba(232,121,160,0.7);}
+.load-msg{color:var(--muted);font-size:0.72rem;letter-spacing:0.2em;font-family:'Inter',sans-serif;min-height:1em;}
+
+/* ═══════════════════════════════════
+   DISCLAIMER
+═══════════════════════════════════ */
+#disclaimer{
+  position:absolute;inset:0;z-index:850;
+  background:#000;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity 1.5s ease;cursor:pointer;
+}
+#disclaimer.on{opacity:1;pointer-events:all;}
+.disc-text{
+  font-family:'Crimson Pro',serif;font-size:clamp(1.4rem,3vw,2.2rem);
+  color:#fff;letter-spacing:0.1em;text-align:center;line-height:1.6;
+  animation:flicker 4s ease infinite;
+}
+@keyframes flicker{0%,100%{opacity:1;}48%{opacity:1;}50%{opacity:0.6;}52%{opacity:1;}90%{opacity:1;}91%{opacity:0.4;}92%{opacity:1;}}
+.disc-hint{color:#333;font-size:0.7rem;letter-spacing:0.3em;margin-top:3rem;font-family:'Inter',sans-serif;animation:blink-slow 2s ease infinite;}
+@keyframes blink-slow{0%,100%{opacity:0.4;}50%{opacity:0.9;}}
+
+/* ═══════════════════════════════════
+   MAIN MENU
+═══════════════════════════════════ */
+#mainmenu{
+  position:absolute;inset:0;z-index:800;
+  display:none;flex-direction:column;
+  background:radial-gradient(ellipse at 30% 50%,#2d0a1e 0%,#120810 40%,#08030a 100%);
+  overflow:hidden;
+}
+.menu-ambient{
+  position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse at 70% 30%,rgba(232,121,160,0.06) 0%,transparent 60%),
+             radial-gradient(ellipse at 20% 80%,rgba(185,28,93,0.08) 0%,transparent 50%);
+  animation:ambientShift 8s ease-in-out infinite alternate;
+}
+@keyframes ambientShift{0%{opacity:0.7;}100%{opacity:1;}}
+.menu-left{
+  flex:1;display:flex;flex-direction:column;
+  justify-content:center;padding:clamp(2rem,6vw,5rem);
+  position:relative;z-index:1;
+  max-width:min(520px,55vw);
+}
+.menu-eyebrow{
+  font-family:'Inter',sans-serif;font-size:0.7rem;letter-spacing:0.35em;
+  color:var(--pk);margin-bottom:1.2rem;
+  text-transform:uppercase;
+}
+.menu-title{
+  font-family:'Crimson Pro',serif;font-style:italic;
+  font-size:clamp(2.5rem,6vw,5rem);font-weight:600;
+  color:#fff;line-height:1.05;margin-bottom:0.6rem;
+  text-shadow:0 2px 40px rgba(232,121,160,0.3);
+}
+.menu-title span{color:var(--pk);}
+.menu-tagline{
+  color:var(--muted);font-size:0.85rem;letter-spacing:0.05em;
+  margin-bottom:3rem;line-height:1.6;font-family:'Inter',sans-serif;
+  max-width:380px;
+}
+.mbtn{
+  display:block;width:min(260px,80vw);padding:0.85rem 1.4rem;
+  margin-bottom:0.6rem;
+  background:transparent;border:1px solid rgba(232,121,160,0.25);
+  color:var(--text);font-family:'Inter',sans-serif;font-size:0.88rem;
+  font-weight:600;letter-spacing:0.08em;cursor:pointer;
+  border-radius:2px;text-align:left;position:relative;
+  transition:var(--trans);overflow:hidden;
+}
+.mbtn .mbtn-arrow{position:absolute;right:1.2rem;top:50%;transform:translateY(-50%);color:var(--pk);opacity:0;transition:var(--trans);}
+.mbtn::before{content:'';position:absolute;left:0;top:0;bottom:0;width:0;background:rgba(232,121,160,0.08);transition:width 0.3s ease;}
+.mbtn:hover{border-color:var(--pk);color:#fff;padding-left:1.8rem;}
+.mbtn:hover::before{width:100%;}
+.mbtn:hover .mbtn-arrow{opacity:1;right:1rem;}
+.menu-version{position:absolute;bottom:1.2rem;left:clamp(2rem,6vw,5rem);color:var(--muted);font-size:0.65rem;letter-spacing:0.2em;font-family:'Inter',sans-serif;}
+.menu-deco{
+  position:absolute;right:0;top:0;bottom:0;width:45%;
+  display:flex;align-items:center;justify-content:center;
+  pointer-events:none;
+}
+.menu-cake-bg{font-size:clamp(8rem,15vw,14rem);opacity:0.04;filter:blur(2px);user-select:none;animation:float-cake 6s ease-in-out infinite;}
+@keyframes float-cake{0%,100%{transform:translateY(0);}50%{transform:translateY(-20px);}}
+
+/* ═══════════════════════════════════
+   HOW TO PLAY
+═══════════════════════════════════ */
+#howtoplay{
+  position:absolute;inset:0;z-index:820;
+  background:rgba(8,3,10,0.96);
+  display:none;align-items:center;justify-content:center;
+  backdrop-filter:blur(8px);
+}
+.htp-panel{
+  width:min(620px,88vw);
+  background:linear-gradient(135deg,#1e0f1a,#120810);
+  border:1px solid rgba(232,121,160,0.2);
+  border-radius:4px;padding:2.5rem;
+  position:relative;
+}
+.htp-panel::before{content:'';position:absolute;top:0;left:2rem;right:2rem;height:1px;background:linear-gradient(90deg,transparent,var(--pk),transparent);}
+.htp-panel h2{font-family:'Crimson Pro',serif;color:#fff;font-size:1.6rem;margin-bottom:1.5rem;font-style:italic;}
+.htp-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;}
+.htp-item{background:rgba(232,121,160,0.04);border:1px solid rgba(232,121,160,0.1);border-radius:3px;padding:1rem;}
+.htp-item .icon{font-size:1.5rem;margin-bottom:0.4rem;}
+.htp-item h3{color:var(--pk);font-size:0.8rem;letter-spacing:0.1em;margin-bottom:0.3rem;font-family:'Inter',sans-serif;font-weight:600;}
+.htp-item p{color:var(--sub);font-size:0.8rem;line-height:1.5;font-family:'Inter',sans-serif;}
+.htp-warn{
+  background:rgba(217,119,6,0.08);border:1px solid rgba(217,119,6,0.3);
+  border-radius:3px;padding:0.8rem 1rem;margin-bottom:1.5rem;
+  color:var(--gold2);font-size:0.8rem;font-family:'Inter',sans-serif;line-height:1.5;
+}
+
+/* ═══════════════════════════════════
+   NAME SCREEN
+═══════════════════════════════════ */
+#namescreen{
+  position:absolute;inset:0;z-index:810;
+  background:radial-gradient(ellipse at center,#1e0f1a 0%,#08030a 100%);
+  display:none;flex-direction:column;align-items:center;justify-content:center;gap:0;
+}
+.ns-title{font-family:'Crimson Pro',serif;font-style:italic;color:#fff;font-size:clamp(1.6rem,3vw,2.4rem);margin-bottom:0.4rem;}
+.ns-sub{color:var(--muted);font-size:0.8rem;letter-spacing:0.15em;margin-bottom:2.5rem;font-family:'Inter',sans-serif;}
+#nameInput{
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(232,121,160,0.3);
+  border-bottom:2px solid var(--pk);
+  color:#fff;font-family:'Crimson Pro',serif;font-size:1.4rem;
+  padding:0.6rem 1.2rem;width:280px;outline:none;text-align:center;
+  border-radius:2px;letter-spacing:0.05em;
+  transition:border-color 0.3s;
+}
+#nameInput:focus{border-color:var(--pk);box-shadow:0 4px 20px rgba(232,121,160,0.15);}
+#nameGo{
+  margin-top:1.4rem;padding:0.7rem 2.5rem;
+  background:linear-gradient(135deg,var(--pk2),var(--pk3));
+  border:none;color:#fff;font-family:'Inter',sans-serif;
+  font-size:0.85rem;font-weight:700;letter-spacing:0.1em;
+  cursor:pointer;border-radius:2px;
+  transition:var(--trans);
+}
+#nameGo:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(190,24,93,0.5);}
+
+/* ═══════════════════════════════════
+   SCENE ENGINE
+═══════════════════════════════════ */
+#scene{position:absolute;inset:0;display:none;}
+
+/* BACKGROUND */
+#bg{position:absolute;inset:0;transition:background 1.2s ease;}
+.bg-vignette{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 30%,rgba(0,0,0,0.7) 100%);pointer-events:none;}
+
+/* ANIMATED BG PARTICLES */
+#bg-particles{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+
+/* SPRITES */
+#sprites{position:absolute;bottom:0;left:0;right:0;height:82%;pointer-events:none;}
+.spr{
+  position:absolute;bottom:0;
+  transition:opacity 0.5s ease,transform 0.5s cubic-bezier(0.4,0,0.2,1),filter 0.4s ease;
+  transform-origin:bottom center;
+}
+.spr.pos-left{left:3%;}
+.spr.pos-cleft{left:18%;}
+.spr.pos-center{left:50%;transform:translateX(-50%);}
+.spr.pos-cright{right:18%;}
+.spr.pos-right{right:3%;}
+.spr img{
+  max-height:72vh;max-width:min(300px,28vw);
+  object-fit:contain;
+  filter:drop-shadow(0 20px 40px rgba(0,0,0,0.9));
+  transition:filter 0.4s ease;
+  display:block;
+}
+.spr.dim img{filter:drop-shadow(0 20px 40px rgba(0,0,0,0.9)) brightness(0.3) saturate(0.1);}
+.spr.shake{animation:charShake 0.4s ease;}
+@keyframes charShake{0%,100%{transform:translateX(-50%);}20%{transform:translateX(calc(-50% - 8px));}40%{transform:translateX(calc(-50% + 8px));}60%{transform:translateX(calc(-50% - 4px));}80%{transform:translateX(calc(-50% + 4px));}}
+.spr.enter{animation:sprEnter 0.5s cubic-bezier(0.4,0,0.2,1) forwards;}
+@keyframes sprEnter{from{opacity:0;transform:translateX(-50%) translateY(20px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
+
+/* Silhouette sprite */
+.silhouette{
+  width:min(160px,18vw);height:min(350px,50vh);
+  position:relative;
+  filter:drop-shadow(0 10px 30px rgba(0,0,0,0.9));
+}
+.sil-body{
+  position:absolute;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;height:88%;
+  background:linear-gradient(180deg,#222 0%,#1a1a1a 60%,#111 100%);
+  border-radius:40% 40% 15% 15%;
+  box-shadow:inset 2px 0 8px rgba(255,255,255,0.03),inset -2px 0 8px rgba(0,0,0,0.5);
+}
+.sil-head{
+  position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:52%;height:26%;
+  background:linear-gradient(180deg,#2a2a2a,#1a1a1a);
+  border-radius:50%;
+  box-shadow:inset 1px 0 6px rgba(255,255,255,0.04);
+}
+.sil-gloss{
+  position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,0.04) 0%,transparent 50%);
+  border-radius:40% 40% 15% 15%;
+}
+.silhouette.dim{filter:drop-shadow(0 10px 30px rgba(0,0,0,0.9)) brightness(0.2);}
+
+/* TEXTBOX */
+#textbox{
+  position:absolute;bottom:0;left:0;right:0;
+  min-height:180px;
+  padding:1.4rem 2rem 2rem;
+  background:linear-gradient(0deg,rgba(4,1,6,0.99) 0%,rgba(8,3,10,0.95) 100%);
+  cursor:pointer;z-index:20;
+  border-top:1px solid rgba(232,121,160,0.15);
+  transition:opacity 0.3s;
+}
+#textbox::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent 0%,var(--pk) 30%,rgba(232,121,160,0.3) 70%,transparent 100%);
+}
+#speaker-wrap{display:flex;align-items:center;gap:0.6rem;margin-bottom:0.5rem;}
+#speaker{
+  font-family:'Crimson Pro',serif;font-size:1.05rem;font-weight:700;font-style:italic;
+  color:var(--pk);letter-spacing:0.05em;
+  display:inline-block;padding:0.15rem 0.8rem;
+  background:rgba(232,121,160,0.08);
+  border-left:2px solid var(--pk);
+}
+#speaker:empty{display:none;}
+.speaker-relation{font-family:'Inter',sans-serif;font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;}
+#dialogue{
+  font-family:'Crimson Pro',serif;font-size:1.1rem;line-height:1.75;
+  color:var(--text);min-height:3.5em;
+}
+#dialogue em{color:var(--sub);font-style:italic;}
+#dialogue strong{color:#fff;font-weight:700;}
+#next-ind{
+  position:absolute;bottom:0.8rem;right:1.5rem;
+  width:20px;height:12px;
+  border-right:2px solid var(--pk);border-bottom:2px solid var(--pk);
+  transform:rotate(45deg);
+  animation:pulse-down 1.2s ease infinite;
+  opacity:0.8;
+}
+@keyframes pulse-down{0%,100%{transform:rotate(45deg) translateY(0);opacity:0.8;}50%{transform:rotate(45deg) translateY(4px);opacity:0.4;}}
+
+/* CHOICES */
+#choices{
+  position:absolute;bottom:195px;left:50%;transform:translateX(-50%);
+  display:none;flex-direction:column;gap:0.55rem;
+  z-index:25;width:min(640px,90vw);
+}
+.cbtn{
+  background:rgba(4,1,6,0.92);
+  border:1px solid rgba(232,121,160,0.2);
+  color:var(--text);padding:0.85rem 1.4rem;
+  font-family:'Inter',sans-serif;font-size:0.88rem;font-weight:500;
+  cursor:pointer;border-radius:2px;text-align:left;
+  transition:var(--trans);position:relative;overflow:hidden;
+  letter-spacing:0.02em;
+}
+.cbtn::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--pk);transform:scaleY(0);transform-origin:bottom;transition:transform 0.2s ease;}
+.cbtn::after{content:'▸';position:absolute;right:1.2rem;top:50%;transform:translateY(-50%);color:var(--pk);opacity:0;transition:var(--trans);}
+.cbtn:hover{background:rgba(232,121,160,0.07);border-color:var(--pk);color:#fff;padding-left:2rem;}
+.cbtn:hover::before{transform:scaleY(1);}
+.cbtn:hover::after{opacity:1;right:1rem;}
+.cbtn.danger{border-color:rgba(220,38,38,0.3);color:#fca5a5;}
+.cbtn.danger:hover{background:rgba(220,38,38,0.08);border-color:var(--red);}
+
+/* HUD */
+#hud{
+  position:absolute;top:0;left:0;right:0;
+  padding:0.8rem 1.4rem;
+  display:flex;justify-content:space-between;align-items:center;
+  z-index:22;pointer-events:none;
+  background:linear-gradient(180deg,rgba(4,1,6,0.7) 0%,transparent 100%);
+}
+.hud-left,.hud-right{display:flex;gap:1.2rem;align-items:center;}
+.hud-chip{
+  font-family:'Inter',sans-serif;font-size:0.65rem;letter-spacing:0.15em;
+  color:var(--muted);display:flex;align-items:center;gap:0.35rem;
+}
+.hud-chip span{color:var(--pk);font-weight:700;}
+#hud-loc{font-family:'Inter',sans-serif;font-size:0.65rem;letter-spacing:0.15em;color:var(--muted);}
+
+/* ═══════════════════════════════════
+   CONSEQUENCE SYSTEM (Life is Strange style)
+═══════════════════════════════════ */
+#cq-overlay{
+  position:absolute;inset:0;z-index:60;
+  background:rgba(0,0,0,0);
+  pointer-events:none;
+  display:none;
+}
+#cq-overlay.on{display:block;animation:cqFade 2.8s ease forwards;}
+@keyframes cqFade{
+  0%{background:rgba(0,0,0,0);}
+  15%{background:rgba(0,0,0,0.88);}
+  75%{background:rgba(0,0,0,0.88);}
+  100%{background:rgba(0,0,0,0);}
+}
+#cq-box{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  text-align:center;opacity:0;
+  animation:cqBox 2.8s ease forwards;
+}
+@keyframes cqBox{0%,8%{opacity:0;transform:translate(-50%,-50%) scale(0.85);}20%,70%{opacity:1;transform:translate(-50%,-50%) scale(1);}90%,100%{opacity:0;transform:translate(-50%,-50%) scale(1.05);}}
+.cq-icon{font-size:2rem;margin-bottom:0.8rem;display:block;color:var(--gold2);}
+.cq-title{
+  font-family:'Crimson Pro',serif;font-size:1.1rem;font-style:italic;
+  letter-spacing:0.2em;color:var(--gold2);
+  text-transform:uppercase;display:block;margin-bottom:0.3rem;
+}
+.cq-sub{font-family:'Inter',sans-serif;font-size:0.7rem;color:#8a6030;letter-spacing:0.2em;}
+
+/* ═══════════════════════════════════
+   GLITCH EFFECT
+═══════════════════════════════════ */
+.glitch-active{animation:glitch 0.3s ease forwards!important;}
+@keyframes glitch{
+  0%{filter:none;}
+  10%{filter:hue-rotate(90deg) saturate(3);transform:translate(-3px,0);}
+  20%{filter:hue-rotate(-90deg);transform:translate(3px,0);}
+  30%{filter:none;transform:translate(0);}
+  50%{filter:hue-rotate(180deg) brightness(2);transform:translate(-2px,1px);}
+  70%{filter:none;transform:translate(0);}
+  85%{filter:saturate(0) brightness(0.5);}
+  100%{filter:none;transform:translate(0);}
+}
+
+/* ═══════════════════════════════════
+   CLUE NOTIFICATION
+═══════════════════════════════════ */
+#clue-notif{
+  position:absolute;top:1.2rem;left:50%;transform:translateX(-50%) translateY(-80px);
+  background:linear-gradient(135deg,rgba(18,8,16,0.98),rgba(8,3,10,0.98));
+  border:1px solid rgba(217,119,6,0.5);
+  border-radius:3px;padding:0.7rem 1.2rem;
+  display:flex;align-items:center;gap:0.8rem;
+  z-index:65;min-width:260px;
+  transition:transform 0.5s cubic-bezier(0.4,0,0.2,1);
+  box-shadow:0 8px 32px rgba(0,0,0,0.6),0 0 20px rgba(217,119,6,0.1);
+}
+#clue-notif.on{transform:translateX(-50%) translateY(0);}
+.cn-icon{font-size:1.3rem;}
+.cn-name{font-family:'Inter',sans-serif;font-size:0.8rem;font-weight:700;color:var(--gold2);}
+.cn-desc{font-family:'Inter',sans-serif;font-size:0.7rem;color:var(--muted);}
+
+/* ═══════════════════════════════════
+   SAVE TOAST
+═══════════════════════════════════ */
+#save-toast{
+  position:absolute;bottom:195px;right:1.2rem;
+  font-family:'Inter',sans-serif;font-size:0.68rem;letter-spacing:0.1em;
+  color:var(--muted);opacity:0;transition:opacity 0.4s;z-index:30;
+}
+#save-toast.on{opacity:1;}
+
+/* ═══════════════════════════════════
+   TRANSITION WIPE
+═══════════════════════════════════ */
+#wipe{position:absolute;inset:0;z-index:200;pointer-events:none;background:#08030a;opacity:0;transition:opacity 0.55s ease;}
+#wipe.in{opacity:1;pointer-events:all;}
+
+/* ═══════════════════════════════════
+   PSYCHOLOGICAL HORROR EFFECTS
+═══════════════════════════════════ */
+#horror-overlay{
+  position:absolute;inset:0;z-index:50;
+  pointer-events:none;opacity:0;
+  background:radial-gradient(ellipse at center,transparent 30%,rgba(100,0,0,0.6) 100%);
+  transition:opacity 2s ease;
+}
+#horror-overlay.on{opacity:1;}
+#static-overlay{
+  position:absolute;inset:0;z-index:55;pointer-events:none;
+  opacity:0;background:repeating-linear-gradient(0deg,rgba(255,255,255,0.015) 0px,rgba(255,255,255,0.015) 1px,transparent 1px,transparent 4px);
+  transition:opacity 0.3s;
+}
+#static-overlay.on{opacity:1;animation:staticAnim 0.08s linear infinite;}
+@keyframes staticAnim{0%{transform:translateY(0);}50%{transform:translateY(-2px);}100%{transform:translateY(0);}}
+#red-flash{
+  position:absolute;inset:0;z-index:58;
+  background:#8b0000;opacity:0;pointer-events:none;
+  transition:opacity 0.1s;
+}
+#red-flash.on{animation:redPulse 0.6s ease forwards;}
+@keyframes redPulse{0%{opacity:0;}15%{opacity:0.35;}40%{opacity:0.15;}70%{opacity:0.25;}100%{opacity:0;}}
+
+/* ═══════════════════════════════════
+   ENDING SCREEN
+═══════════════════════════════════ */
+#ending{
+  position:absolute;inset:0;z-index:700;
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  padding:3rem 2rem;text-align:center;
+  background:#000;
+}
+.end-tag{
+  font-family:'Inter',sans-serif;font-size:0.65rem;letter-spacing:0.4em;
+  color:var(--muted);margin-bottom:1.5rem;text-transform:uppercase;
+}
+#end-title{
+  font-family:'Crimson Pro',serif;font-style:italic;
+  font-size:clamp(1.8rem,4vw,3.2rem);color:#fff;
+  margin-bottom:1.2rem;line-height:1.1;
+}
+#end-badge{font-size:3rem;margin-bottom:1.5rem;display:block;}
+#end-text{
+  font-family:'Crimson Pro',serif;font-size:1.05rem;
+  color:var(--sub);max-width:560px;line-height:1.8;margin-bottom:0.6rem;
+}
+#end-consequence{
+  font-family:'Inter',sans-serif;font-size:0.75rem;
+  color:var(--muted);max-width:480px;margin:0.5rem auto 2.5rem;
+  line-height:1.6;letter-spacing:0.02em;font-style:italic;
+}
+.end-actions{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;}
+.end-btn{
+  padding:0.7rem 1.8rem;font-family:'Inter',sans-serif;font-size:0.8rem;
+  font-weight:600;letter-spacing:0.1em;cursor:pointer;border-radius:2px;
+  transition:var(--trans);
+}
+.end-btn.primary{background:rgba(232,121,160,0.12);border:1px solid var(--pk);color:#fff;}
+.end-btn.primary:hover{background:rgba(232,121,160,0.25);}
+.end-btn.secondary{background:transparent;border:1px solid rgba(255,255,255,0.1);color:var(--muted);}
+.end-btn.secondary:hover{border-color:rgba(255,255,255,0.3);color:#fff;}
+
+/* MOBILE */
+@media(max-width:640px){
+  .menu-left{max-width:100%;padding:2.5rem 1.5rem;}
+  .menu-deco{display:none;}
+  #dialogue{font-size:0.95rem;}
+  .spr img{max-height:52vh;max-width:180px;}
+  #textbox{padding:1rem 1.2rem 1.6rem;min-height:160px;}
+  #choices{bottom:175px;}
+  .htp-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div id="G">
+
+<!-- HORROR EFFECTS -->
+<div id="horror-overlay"></div>
+<div id="static-overlay"></div>
+<div id="red-flash"></div>
+
+<!-- LOADING -->
+<div id="loading">
+  <div class="load-logo">🎂 BOLO DE POTE DA MANU</div>
+  <div class="load-sub">UMA HISTÓRIA SOBRE AÇÚCAR E CONSEQUÊNCIAS</div>
+  <div class="load-bar-wrap"><div class="load-bar" id="lbar"></div></div>
+  <div class="load-msg" id="lmsg">inicializando memórias...</div>
+</div>
+
+<!-- DISCLAIMER -->
+<div id="disclaimer" onclick="passDisclaimer()">
+  <div class="disc-text">Nenhum bolo foi ferido<br>durante a produção deste jogo.</div>
+  <div class="disc-hint">toque para continuar</div>
+</div>
+
+<!-- MAIN MENU -->
+<div id="mainmenu">
+  <div class="menu-ambient"></div>
+  <div class="menu-deco"><div class="menu-cake-bg">🎂</div></div>
+  <div class="menu-left">
+    <div class="menu-eyebrow">uma visual novel</div>
+    <h1 class="menu-title"><em>Bolo de Pote</em><br><span>da Manu</span></h1>
+    <p class="menu-tagline">Alguém confiscou os bolos. Alguém vai se arrepender. Suas escolhas têm peso — algumas mais do que você imagina.</p>
+    <button class="mbtn" onclick="goNameScreen()">NOVA HISTÓRIA <span class="mbtn-arrow">→</span></button>
+    <button class="mbtn" onclick="tryLoad()">CONTINUAR <span class="mbtn-arrow">→</span></button>
+    <button class="mbtn" onclick="showHTP()">COMO JOGAR <span class="mbtn-arrow">→</span></button>
+  </div>
+  <div class="menu-version">v2.0 · github edition</div>
+</div>
+
+<!-- HOW TO PLAY -->
+<div id="howtoplay">
+  <div class="htp-panel">
+    <h2>Como Jogar</h2>
+    <div class="htp-grid">
+      <div class="htp-item"><div class="icon">💬</div><h3>AVANÇAR</h3><p>Clique ou pressione Espaço/Enter para avançar os diálogos.</p></div>
+      <div class="htp-item"><div class="icon">⚡</div><h3>ESCOLHAS</h3><p>Cada decisão muda a história — respostas grosseiras têm custo real.</p></div>
+      <div class="htp-item"><div class="icon">🔍</div><h3>PISTAS</h3><p>Colete 5 pistas para desbloquear o melhor final.</p></div>
+      <div class="htp-item"><div class="icon">🏁</div><h3>FINAIS</h3><p>6 finais possíveis — do triunfo total à derrota humilhante.</p></div>
+    </div>
+    <div class="htp-warn">⚡ Quando aparecer <strong>"ESTA AÇÃO TERÁ CONSEQUÊNCIAS"</strong>, o jogo está mudando de rumo. Não existe voltar atrás.</div>
+    <button class="mbtn" style="width:100%;text-align:center" onclick="hideHTP()">ENTENDIDO</button>
+  </div>
+</div>
+
+<!-- NAME SCREEN -->
+<div id="namescreen">
+  <h2 class="ns-title">Quem é você nessa história?</h2>
+  <p class="ns-sub">seu nome vai aparecer nos diálogos</p>
+  <input type="text" id="nameInput" placeholder="Digite seu nome..." maxlength="18" autocomplete="off" spellcheck="false"/>
+  <button id="nameGo" onclick="confirmName()">ENTRAR NA HISTÓRIA →</button>
+</div>
+
+<!-- SCENE -->
+<div id="scene">
+  <div id="bg"><div class="bg-vignette"></div><div id="bg-particles"></div></div>
+  <div id="sprites"></div>
+  <div id="hud">
+    <div class="hud-left">
+      <div class="hud-chip">🔍 PISTAS <span id="hud-clues">0</span>/5</div>
+      <div class="hud-chip">❤️ REPUTAÇÃO <span id="hud-rep">+0</span></div>
+    </div>
+    <div class="hud-right">
+      <div id="hud-loc">—</div>
+    </div>
+  </div>
+  <div id="textbox" onclick="advance()">
+    <div id="speaker-wrap"><span id="speaker"></span><span class="speaker-relation" id="speaker-rel"></span></div>
+    <div id="dialogue"></div>
+    <div id="next-ind"></div>
+  </div>
+</div>
+
+<!-- CHOICES -->
+<div id="choices"></div>
+
+<!-- CONSEQUENCE OVERLAY -->
+<div id="cq-overlay">
+  <div id="cq-box">
+    <span class="cq-icon">⚡</span>
+    <span class="cq-title">Esta ação terá consequências</span>
+    <span class="cq-sub">não existe desfazer</span>
+  </div>
+</div>
+
+<!-- CLUE NOTIFICATION -->
+<div id="clue-notif">
+  <span class="cn-icon">🔍</span>
+  <div>
+    <div class="cn-name" id="cn-name">Pista encontrada</div>
+    <div class="cn-desc" id="cn-desc"></div>
+  </div>
+</div>
+
+<!-- SAVE TOAST -->
+<div id="save-toast">💾 salvo</div>
+
+<!-- ENDING -->
+<div id="ending">
+  <div class="end-tag">— fim —</div>
+  <span id="end-badge">🎂</span>
+  <h1 id="end-title">Título do Final</h1>
+  <p id="end-text">Texto do final.</p>
+  <p id="end-consequence"></p>
+  <div class="end-actions">
+    <button class="end-btn primary" onclick="restart()">↩ JOGAR NOVAMENTE</button>
+    <button class="end-btn secondary" onclick="goMenu()">MENU PRINCIPAL</button>
+  </div>
+</div>
+
+<!-- WIPE TRANSITION -->
+<div id="wipe"></div>
+
+<script>
+// ═══════════════════════════════════════════
+//  GAME STATE
+// ═══════════════════════════════════════════
+let PLAYER = "você";
+let reputation = 0; // +boa, -ruim
+let clues = 0;
+let clueList = [];
+let F = {
+  // relações
+  manu_trust:10,    // 0-20
+  maryana_trust:10,
+  duda_trust:10,
+  alice_trust:10,
+  // plot flags
+  insulted_manu:false,
+  threatened_duda:false,
+  betrayed_maryana:false,
+  found_secret:false,
+  used_all_clues:false,
+  sabotaged:false,
+  confronted_calmly:false,
+  accepted_deal:false,
+  revealed_truth:false,
+  horror_unlocked:false,
+  cilene_saw_you:false,
+  first_choice_done:false,
+};
+
+// typing state
+let typing=false,typeTimer=null;
+let curLines=[],curIdx=0,waitingChoice=false;
+
+// ═══════════════════════════════════════════
+//  BACKGROUNDS
+// ═══════════════════════════════════════════
+const BG={
+  hall:   'linear-gradient(160deg,#0d0718 0%,#180d2a 50%,#0d0718 100%)',
+  class:  'linear-gradient(160deg,#07111e 0%,#0d1e30 50%,#07111e 100%)',
+  canteen:'linear-gradient(160deg,#180810 0%,#2d0f1e 50%,#180810 100%)',
+  storage:'linear-gradient(160deg,#050505 0%,#0f0f0f 50%,#050505 100%)',
+  office: 'linear-gradient(160deg,#0d0d00 0%,#1a1a00 50%,#0d0d00 100%)',
+  outside:'linear-gradient(180deg,#060d18 0%,#0d1a2e 40%,#061018 100%)',
+  horror: 'linear-gradient(160deg,#100003 0%,#1a0008 50%,#0a0002 100%)',
+  good_end:'linear-gradient(160deg,#00100a 0%,#001a12 50%,#000f08 100%)',
+  bad_end: 'linear-gradient(160deg,#100000 0%,#1a0000 50%,#0a0000 100%)',
+  neutral_end:'linear-gradient(160deg,#0d0d0d 0%,#181818 50%,#0d0d0d 100%)',
+};
+
+// ═══════════════════════════════════════════
+//  SPRITES
+// ═══════════════════════════════════════════
+const SPR={
+  manu:   {img:'Imagem1.jpg',name:'Manu',rel:'criadora dos bolos'},
+  alice:  {img:'Imagem2.jpg',name:'Alice',rel:'colega'},
+  duda:   {img:'Imagem3.jpg',name:'Duda',rel:'comissão de eventos'},
+  maryana:{img:'Imagem4.jpg',name:'Maryana',rel:'colega'},
+  cilene: {sil:true,name:'Cilene',rel:'coordenadora'},
+  aluno:  {sil:true,name:'Aluno',rel:''},
+  player: {none:true},
+};
+
+// ═══════════════════════════════════════════
+//  SCRIPT — Cenas completas
+// ═══════════════════════════════════════════
+// Format: {id, bg, loc, horror?, lines[]}
+// line: {sp, rel, txt, spr[], choices?, clue?, consequence?, glitch?, horror?, shake?, sfx?}
+
+function mkScript(){return[
+
+// ══════════════════════════════════════
+// CENA 0: ABERTURA — Horror Psicológico
+// ══════════════════════════════════════
+{id:'abertura',bg:'hall',loc:'Corredor da Escola — 7h41',lines:[
+  {sp:'',txt:'Segunda-feira. Você chegou cedo. O corredor estava vazio demais para ser normal.',spr:[]},
+  {sp:'',txt:'Então você sentiu o cheiro. Brigadeiro. Ninho. Churros. Um cheiro que não deveria estar ali a essa hora.',spr:[]},
+  {sp:'',txt:'E então você a viu.',spr:[{who:'manu',pos:'center'}]},
+  {sp:'Manu',rel:'criadora dos bolos',txt:'[P]... Que bom que você veio cedo.',spr:[{who:'manu',pos:'center'}]},
+  {sp:'Manu',txt:'Ela levou tudo. Todos os bolos. Esta manhã, antes do sol nascer.',spr:[{who:'manu',pos:'center'}]},
+  {sp:'Manu',txt:'A Cilene. Ela disse que eram... "PingueluDu" demais. Que eu estava "contaminando" o ambiente escolar.',spr:[{who:'manu',pos:'center'}]},
+  {sp:'[P]',txt:'Ela falou isso com essas palavras?',spr:[{who:'manu',pos:'center',dim:true}]},
+  {sp:'Manu',txt:'Com um sorriso, [P]. Ela falou com um sorriso no rosto.',spr:[{who:'manu',pos:'center'}],shake:true},
+  {sp:'',txt:'O que você sente?',spr:[{who:'manu',pos:'center',dim:true}],
+   consequence:true,
+   choices:[
+    {txt:'Raiva. Isso é injusto e a Cilene vai pagar.',cl:'hero',goto:'apoio_manu',fx:()=>{F.first_choice_done=true;reputation+=2;}},
+    {txt:'"Talvez ela tenha razão... eram muitos bolos."',cl:'danger',goto:'duvida_manu',fx:()=>{F.insulted_manu=true;F.manu_trust-=5;reputation-=3;F.first_choice_done=true;}},
+    {txt:'[Silêncio. Você absorve a informação.]',cl:'',goto:'silencio_manu',fx:()=>{F.first_choice_done=true;}},
+   ]},
+]},
+
+// ══════════════════════════════════════
+// CENA 1A: Você apoia (normal)
+// ══════════════════════════════════════
+{id:'apoio_manu',bg:'hall',loc:'Corredor da Escola',lines:[
+  {sp:'Manu',txt:'Sabia que podia contar com você.',spr:[{who:'manu',pos:'center'}]},
+  {sp:'Manu',txt:'Ouvi a Maryana dizer que viu a Cilene entrando no depósito de madrugada com a sacola. Fala com ela.',spr:[{who:'manu',pos:'center'}]},
+  {sp:'Manu',txt:'Mas [P]... cuidado com o que você vai encontrar lá dentro.',spr:[{who:'manu',pos:'center'}]},
+  {sp:'[P]',txt:'O que isso quer dizer?',spr:[{who:'manu',pos:'center',dim:true}]},
+  {sp:'Manu',txt:'Quer dizer que a Cilene não é só "chata". Tem coisa estranha nessa escola. Coisa que você vai ver com os próprios olhos.',spr:[{who:'manu',pos:'center'}]},
+  {sp:'',txt:'[ir falar com Maryana →]',spr:[],goto:'maryana_1'},
+]},
+
+// CENA 1B: Você duvidou de Manu
+{id:'duvida_manu',bg:'hall',loc:'Corredor da Escola',lines:[
+  {sp:'Manu',txt:'...',spr:[{who:'manu',pos:'center'}]},
+  {sp:'Manu',txt:'Você também? Pensei que você fosse diferente.',spr:[{who:'manu',pos:'center'}]},
+  {sp:'[P]',txt:'Manu, eu não quis dizer—',spr:[{who:'manu',pos:'center',dim:true}]},
+  {sp:'Manu',txt:'Pode parar. Não precisa mentir pra me poupar. Eu já ouvi isso hoje.',spr:[{who:'manu',pos:'center'}]},
+  {sp:'Manu',txt:'Mas se você quiser provar que errou... me ajuda a recuperar os bolos. Fala com a Maryana.',spr:[{who:'manu',pos:'center',dim:true}]},
+  {sp:'',txt:'[ir falar com Maryana →]',spr:[],goto:'maryana_1'},
+]},
+
+// CENA 1C: Silêncio
+{id:'silencio_manu',bg:'hall',loc:'Corredor da Escola',lines:[
+  {sp:'Manu',txt:'Tá bem. Não precisa dizer nada.',spr:[{who:'manu',pos:'center'}]},
+  {sp:'Manu',txt:'Às vezes o silêncio fala mais do que qualquer resposta.',spr:[{who:'manu',pos:'center'}]},
+  {sp:'Manu',txt:'A Maryana viu tudo. Vai lá.',spr:[{who:'manu',pos:'center',dim:true}]},
+  {sp:'',txt:'[ir falar com Maryana →]',spr:[],goto:'maryana_1'},
+]},
+
+// ══════════════════════════════════════
+// CENA 2: MARYANA
+// ══════════════════════════════════════
+{id:'maryana_1',bg:'class',loc:'Sala de Aula — 1ª Fila',lines:[
+  {sp:'',txt:'Maryana estava quieta. Demais. Ela não virou quando você entrou.',spr:[{who:'maryana',pos:'center'}]},
+  {sp:'Maryana',rel:'colega',txt:'Eu sabia que você viria.',spr:[{who:'maryana',pos:'center'}]},
+  {sp:'[P]',txt:'Você viu alguma coisa esta manhã?',spr:[{who:'maryana',pos:'center',dim:true}]},
+  {sp:'Maryana',txt:'Vi tudo. A Cilene chegou às 6h30. Sacola azul. Pesada demais para papelada.',spr:[{who:'maryana',pos:'center'}],
+   clue:{name:'Sacola Azul da Cilene',desc:'Chegou à escola às 6h30, antes de qualquer professor.'}},
+  {sp:'Maryana',txt:'E o engraçado? Ela saiu sorrindo. Tipo quem acabou de ganhar uma aposta.',spr:[{who:'maryana',pos:'center'}]},
+  {sp:'[P]',txt:'Você sabe onde ela colocou os bolos?',spr:[{who:'maryana',pos:'center',dim:true}]},
+  {sp:'Maryana',txt:'Depósito B. Mas tem coisa que eu não te contei ainda...',spr:[{who:'maryana',pos:'center'}]},
+  {sp:'Maryana',txt:'Essa não é a primeira vez. No mês passado, ela fez o mesmo com o lanche da Alice. E antes com o projeto da Duda.',spr:[{who:'maryana',pos:'center'}]},
+  {sp:'',txt:'Como você responde?',spr:[{who:'maryana',pos:'center',dim:true}],
+   choices:[
+    {txt:'"Então ela faz isso com todo mundo. Temos que parar ela de uma vez."',fx:()=>{F.maryana_trust+=3;reputation+=1;},goto:'maryana_aliada'},
+    {txt:'"Maryana, você tá exagerando. Isso não pode ser verdade."',cl:'danger',fx:()=>{F.betrayed_maryana=true;F.maryana_trust-=4;reputation-=2;},goto:'maryana_magoada'},
+    {txt:'"Me dá mais informações. Você tem alguma prova?"',fx:()=>{F.maryana_trust+=2;},goto:'maryana_prova'},
+   ]},
+]},
+
+{id:'maryana_aliada',bg:'class',loc:'Sala de Aula',lines:[
+  {sp:'Maryana',txt:'Finalmente alguém que leva isso a sério.',spr:[{who:'maryana',pos:'center'}]},
+  {sp:'Maryana',txt:'Eu tenho o horário que ela entrou registrado na câmera do corredor. A câmera que ela acha que foi desligada.',spr:[{who:'maryana',pos:'center'}],
+   clue:{name:'Gravação da Câmera',desc:'Maryana tem acesso às câmeras do corredor. 6h31.'}},
+  {sp:'Maryana',txt:'Fala com a Duda pra pegar a chave do depósito. E depois... vem me contar o que você encontrar lá dentro.',spr:[{who:'maryana',pos:'center'}]},
+  {sp:'',txt:'[ir falar com Duda →]',spr:[],goto:'duda_1'},
+]},
+
+{id:'maryana_magoada',bg:'class',loc:'Sala de Aula',lines:[
+  {sp:'Maryana',txt:'...',spr:[{who:'maryana',pos:'center'}]},
+  {sp:'Maryana',txt:'É. Tudo bem.',spr:[{who:'maryana',pos:'center',dim:true}]},
+  {sp:'Maryana',txt:'Fala com a Duda. Ela tem a chave. Só isso que eu tenho a dizer.',spr:[{who:'maryana',pos:'center',dim:true}]},
+  {sp:'',txt:'[Maryana virou de costas. Ela não vai mais ajudar.]',spr:[],goto:'duda_1'},
+]},
+
+{id:'maryana_prova',bg:'class',loc:'Sala de Aula',lines:[
+  {sp:'Maryana',txt:'Tenho. Aqui.',spr:[{who:'maryana',pos:'center'}]},
+  {sp:'Maryana',txt:'Foto do bilhete que a Cilene deixou na porta do depósito. "Itens apreendidos. Motivo: conduta inadequada."',spr:[{who:'maryana',pos:'center'}],
+   clue:{name:'Bilhete de Apreensão',desc:'Escrito à mão por Cilene. Sem protocolo oficial. Irregular.'}},
+  {sp:'Maryana',txt:'Isso não é procedimento padrão. Ela age sozinha. Sem autorização da direção.',spr:[{who:'maryana',pos:'center'}]},
+  {sp:'Maryana',txt:'Fala com a Duda. E toma cuidado — a Cilene tem ouvidos por toda a escola.',spr:[{who:'maryana',pos:'center'}]},
+  {sp:'',txt:'[ir falar com Duda →]',spr:[],goto:'duda_1'},
+]},
+
+// ══════════════════════════════════════
+// CENA 3: DUDA
+// ══════════════════════════════════════
+{id:'duda_1',bg:'canteen',loc:'Cantina — Corredor do Fundo',lines:[
+  {sp:'',txt:'Duda estava no canto mais escuro da cantina, sozinha. Não estava comendo.',spr:[{who:'duda',pos:'center'}]},
+  {sp:'Duda',rel:'comissão de eventos',txt:'Eu sei por que você veio.',spr:[{who:'duda',pos:'center'}]},
+  {sp:'[P]',txt:'A chave do depósito B. Você tem.',spr:[{who:'duda',pos:'center',dim:true}]},
+  {sp:'Duda',txt:'Tenho. E a Cilene me disse pessoalmente — palavras dela — que se eu deixar alguém entrar, ela vai cancelar a formatura.',spr:[{who:'duda',pos:'center'}]},
+  {sp:'Duda',txt:'A formatura de toda a turma. Por causa de um bolo.',spr:[{who:'duda',pos:'center'}]},
+  {sp:'[P]',txt:'Ela disse isso sério?',spr:[{who:'duda',pos:'center',dim:true}]},
+  {sp:'Duda',txt:'Com aquele sorriso dela. Aquele que não chega nos olhos.',spr:[{who:'duda',pos:'center'}]},
+  {sp:'',txt:'Como você vai convencer Duda?',spr:[{who:'duda',pos:'center',dim:true}],
+   consequence:true,
+   choices:[
+    {txt:'"Duda, pensa bem. Isso é chantagem. Ela não pode fazer isso."',fx:()=>{F.duda_trust+=3;reputation+=1;},goto:'duda_argumento'},
+    {txt:'"Se você não me der essa chave eu conto pra todo mundo que você tá do lado da Cilene."',cl:'danger',fx:()=>{F.threatened_duda=true;F.duda_trust-=6;reputation-=4;},goto:'duda_ameaçada'},
+    {txt:'"Escuta... eu entendo o medo. Mas a Manu está sofrendo."',fx:()=>{F.duda_trust+=2;},goto:'duda_empatia'},
+   ]},
+]},
+
+{id:'duda_argumento',bg:'canteen',loc:'Cantina',lines:[
+  {sp:'Duda',txt:'Eu sei que é chantagem. Mas ela tem poder aqui dentro.',spr:[{who:'duda',pos:'center'}]},
+  {sp:'Duda',txt:'...',spr:[{who:'duda',pos:'center'}]},
+  {sp:'Duda',txt:'Tá bem. Você tem razão. Eu não posso ficar calada enquanto a Manu leva a culpa.',spr:[{who:'duda',pos:'center'}]},
+  {sp:'Duda',txt:'Mas se a Cilene me chamar, eu nunca te vi, combinado?',spr:[{who:'duda',pos:'center'}],
+   clue:{name:'Chave do Depósito B',desc:'Duda emprestou em segredo. Acesso garantido ao depósito.'}},
+  {sp:'',txt:'[ir falar com Alice →]',spr:[],goto:'alice_corredor'},
+]},
+
+{id:'duda_ameaçada',bg:'canteen',loc:'Cantina',lines:[
+  {sp:'Duda',txt:'...',spr:[{who:'duda',pos:'center'}]},
+  {sp:'Duda',txt:'Que baixaria.',spr:[{who:'duda',pos:'center',dim:true}]},
+  {sp:'Duda',txt:'Sabe o que? Fica a chave. Mas não espera nenhuma ajuda minha depois disso.',spr:[{who:'duda',pos:'center',dim:true}],
+   clue:{name:'Chave do Depósito B',desc:'Conseguiu pela força. Duda está magoada e não vai ajudar mais.'}},
+  {sp:'',txt:'[Duda saiu sem olhar pra você. Você ficou mais sozinho(a) nessa história.]',spr:[],goto:'alice_corredor'},
+]},
+
+{id:'duda_empatia',bg:'canteen',loc:'Cantina',lines:[
+  {sp:'Duda',txt:'...',spr:[{who:'duda',pos:'center'}]},
+  {sp:'Duda',txt:'A Manu nunca fez mal a ninguém. Esses bolos eram a alegria dela.',spr:[{who:'duda',pos:'center'}]},
+  {sp:'Duda',txt:'Você me convenceu. Mas você me promete que se der errado, você assume sozinho(a)?',spr:[{who:'duda',pos:'center'}]},
+  {sp:'',txt:'Você promete?',spr:[{who:'duda',pos:'center',dim:true}],
+   choices:[
+    {txt:'"Prometo. Isso é entre eu e a Cilene."',fx:()=>{F.duda_trust+=2;reputation+=1;},goto:'duda_aliada'},
+    {txt:'"Não posso prometer isso... não seria honesto."',fx:()=>{F.duda_trust+=1;},goto:'duda_honest'},
+   ]},
+]},
+
+{id:'duda_aliada',bg:'canteen',loc:'Cantina',lines:[
+  {sp:'Duda',txt:'Tá bom. Aqui está.',spr:[{who:'duda',pos:'center'}],
+   clue:{name:'Chave do Depósito B',desc:'Duda confia em você. Ela vai cobrir sua saída.'}},
+  {sp:'Duda',txt:'E [P]? Cuidado lá dentro. A Cilene às vezes fica por perto depois do primeiro período.',spr:[{who:'duda',pos:'center'}]},
+  {sp:'',txt:'[ir falar com Alice →]',spr:[],goto:'alice_corredor'},
+]},
+
+{id:'duda_honest',bg:'canteen',loc:'Cantina',lines:[
+  {sp:'Duda',txt:'...',spr:[{who:'duda',pos:'center'}]},
+  {sp:'Duda',txt:'Tá. Gosto de honestidade. Fica a chave.',spr:[{who:'duda',pos:'center'}],
+   clue:{name:'Chave do Depósito B',desc:'Duda cedeu pela sua honestidade. Ela vai ajudar se precisar.'}},
+  {sp:'',txt:'[ir falar com Alice →]',spr:[],goto:'alice_corredor'},
+]},
+
+// ══════════════════════════════════════
+// CENA 4: ALICE — ENCONTRO INESPERADO
+// ══════════════════════════════════════
+{id:'alice_corredor',bg:'hall',loc:'Corredor Lateral',lines:[
+  {sp:'',txt:'Antes de chegar ao depósito, alguém puxou seu braço.',spr:[{who:'alice',pos:'center'}]},
+  {sp:'Alice',rel:'colega',txt:'Espera. [P].',spr:[{who:'alice',pos:'center'}]},
+  {sp:'[P]',txt:'Alice? Você também sabe?',spr:[{who:'alice',pos:'center',dim:true}]},
+  {sp:'Alice',txt:'Todo mundo sabe. Mas ninguém fala.',spr:[{who:'alice',pos:'center'}]},
+  {sp:'Alice',txt:'Olha. Eu fotografei a Cilene saindo do depósito às 6h47. E ela não estava sozinha.',spr:[{who:'alice',pos:'center'}],
+   clue:{name:'Foto — Cilene não estava sozinha',desc:'Alice fotografou 2 pessoas saindo do depósito de manhã cedo.'}},
+  {sp:'Alice',txt:'Tinha alguém com ela. Um adulto. Mas a foto ficou escura demais pra identificar.',spr:[{who:'alice',pos:'center'}]},
+  {sp:'[P]',txt:'Você está me dizendo que alguém a ajudou a confiscar os bolos?',spr:[{who:'alice',pos:'center',dim:true}]},
+  {sp:'Alice',txt:'Estou dizendo que talvez isso não seja só sobre bolo.',spr:[{who:'alice',pos:'center'}]},
+  {sp:'',txt:'[ir ao depósito →]',spr:[],goto:'deposito_1'},
+]},
+
+// ══════════════════════════════════════
+// CENA 5: DEPÓSITO — HORROR PSICOLÓGICO
+// ══════════════════════════════════════
+{id:'deposito_1',bg:'storage',loc:'Depósito B — Subsolo',horror:true,lines:[
+  {sp:'',txt:'A escada descia mais do que deveria. Era só o depósito da escola... mas parecia diferente lá embaixo.',spr:[]},
+  {sp:'',txt:'A luz piscou uma vez quando você entrou.',spr:[]},
+  {sp:'',txt:'E então você viu as caixas.',spr:[],glitch:true},
+  {sp:'',txt:'Não eram só as caixas da Manu. Havia outros itens. Outros nomes. Escritos em etiquetas amarelas.',spr:[]},
+  {sp:'[P]',txt:'(Lanche da Alice — apreendido 14/03. Projeto da Duda — apreendido 28/03. Bolo da Manu — apreendido hoje.)',spr:[]},
+  {sp:'',txt:'Ela faz isso há meses.',spr:[],glitch:true},
+  {sp:'',txt:'Você procura os bolos da Manu e encontra — todos os 25 potes, intactos.',spr:[],
+   clue:{name:'Os 25 Potes da Manu',desc:'Encontrados no Depósito B. Com outros itens de colegas. Há meses.'}},
+  {sp:'',txt:'Mas então você vê algo que não deveria estar lá.',spr:[]},
+  {sp:'',txt:'Um caderno. Capa preta. Com o nome: CILENE — REGISTROS PESSOAIS.',spr:[],glitch:true},
+  {sp:'',txt:'Você pega e abre na última página.',spr:[]},
+  {sp:'',txt:'"Hoje a Manu foi o alvo. Ela cria vínculos. Vínculos criam dependência. Dependência cria desordem. A desordem não pode prosperar aqui."',spr:[]},
+  {sp:'[P]',txt:'...',spr:[]},
+  {sp:'',txt:'O que você faz com esse caderno?',spr:[],
+   consequence:true,
+   choices:[
+    {txt:'Fotografo tudo e devolvo o caderno exatamente onde estava.',fx:()=>{F.found_secret=true;clues++;clueList.push('Caderno de Cilene');reputation+=2;},goto:'deposito_foto'},
+    {txt:'Pego o caderno. Isso é prova suficiente.',fx:()=>{F.found_secret=true;F.cilene_saw_you=true;clues++;clueList.push('Caderno de Cilene (roubado)');},goto:'deposito_pega'},
+    {txt:'Deixo o caderno. Não quero saber mais nada.',fx:()=>{F.horror_unlocked=true;},goto:'deposito_ignora'},
+   ]},
+]},
+
+{id:'deposito_foto',bg:'storage',loc:'Depósito B',lines:[
+  {sp:'',txt:'Você fotografa cada página. Devolve tudo no lugar exato. A pó não foi perturbada.',spr:[]},
+  {sp:'',txt:'Quando você estava saindo, a luz piscou de novo.',spr:[]},
+  {sp:'',txt:'E você ouviu passos na escada.',spr:[],glitch:true},
+  {sp:'',txt:'Você se escondeu atrás das caixas. O coração acelerado.',spr:[]},
+  {sp:'',txt:'A porta abriu. Uma sombra. Ficou parada por oito segundos. Depois saiu.',spr:[]},
+  {sp:'[P]',txt:'(Ela sabia que alguém estava aqui?)',spr:[]},
+  {sp:'',txt:'[ir falar com Alice →]',spr:[],goto:'alice_pos_deposito'},
+]},
+
+{id:'deposito_pega',bg:'storage',loc:'Depósito B',lines:[
+  {sp:'',txt:'Você colocou o caderno na mochila.',spr:[]},
+  {sp:'',txt:'Quando estava saindo, a luz acendeu de repente. Lá estava ela.',spr:[{who:'cilene',pos:'center'}]},
+  {sp:'Cilene',rel:'coordenadora',txt:'[P].',spr:[{who:'cilene',pos:'center'}]},
+  {sp:'Cilene',txt:'Que interessante. Você está no depósito restrito com itens que não pertencem a você.',spr:[{who:'cilene',pos:'center'}]},
+  {sp:'[P]',txt:'Cilene, eu—',spr:[{who:'cilene',pos:'center',dim:true}]},
+  {sp:'Cilene',txt:'Não se explique. Explicações são para pessoas que não foram pegos.',spr:[{who:'cilene',pos:'center'}]},
+  {sp:'Cilene',txt:'Você tem duas opções: devolve o caderno e vai embora. Ou eu ligo agora para seus responsáveis.',spr:[{who:'cilene',pos:'center'}]},
+  {sp:'',txt:'O que você faz?',spr:[{who:'cilene',pos:'center',dim:true}],
+   consequence:true,
+   choices:[
+    {txt:'Devolver o caderno. Não vale a pena agora.',fx:()=>{F.cilene_saw_you=true;reputation-=2;},goto:'cilene_venceu_parcial'},
+    {txt:'Recusar. Guardar o caderno e enfrentar as consequências.',cl:'danger',fx:()=>{F.cilene_saw_you=true;F.found_secret=true;reputation-=1;},goto:'cilene_confronto_cedo'},
+   ]},
+]},
+
+{id:'deposito_ignora',bg:'storage',loc:'Depósito B',lines:[
+  {sp:'',txt:'Você fechou o caderno. Não queria saber.',spr:[]},
+  {sp:'',txt:'Mas ao sair, você sentiu algo pesado atrás de você.',spr:[],glitch:true},
+  {sp:'',txt:'Como se a escola inteira soubesse que você tinha visto o que não devia ter sido visto.',spr:[]},
+  {sp:'',txt:'[continuar sem o segredo da Cilene →]',spr:[],goto:'alice_pos_deposito'},
+]},
+
+// ══════════════════════════════════════
+// CENA 6: CILENE — CONFRONTO PARCIAL
+// ══════════════════════════════════════
+{id:'cilene_venceu_parcial',bg:'office',loc:'Corredor — Após o Depósito',lines:[
+  {sp:'',txt:'Você devolveu o caderno. Cilene o guardou sem dizer mais nada.',spr:[{who:'cilene',pos:'center'}]},
+  {sp:'Cilene',txt:'Decisão inteligente.',spr:[{who:'cilene',pos:'center'}]},
+  {sp:'',txt:'Ela saiu. Você ficou parado(a) no corredor, com as mãos vazias.',spr:[]},
+  {sp:'',txt:'[continuar sem o caderno →]',spr:[],goto:'alice_pos_deposito'},
+]},
+
+{id:'cilene_confronto_cedo',bg:'office',loc:'Corredor — Fora do Depósito',lines:[
+  {sp:'Cilene',txt:'Você quer jogar duro, é?',spr:[{who:'cilene',pos:'center'}]},
+  {sp:'Cilene',txt:'Tudo bem. Mas saiba: você não vai ganhar isso sozinho(a). Esse colégio é meu há 12 anos.',spr:[{who:'cilene',pos:'center'}]},
+  {sp:'[P]',txt:'E tem estudantes aqui há 12 anos também. Você não os representa.',spr:[{who:'cilene',pos:'center',dim:true}]},
+  {sp:'Cilene',txt:'... hm.',spr:[{who:'cilene',pos:'center'}]},
+  {sp:'Cilene',txt:'Veremos.',spr:[{who:'cilene',pos:'center',dim:true}]},
+  {sp:'',txt:'Cilene foi embora. Mas não pareceu abalada. Pareceu... curiosa.',spr:[],goto:'alice_pos_deposito'},
+]},
+
+// ══════════════════════════════════════
+// CENA 7: ALICE PÓS-DEPÓSITO
+// ══════════════════════════════════════
+{id:'alice_pos_deposito',bg:'hall',loc:'Banheiro da Escola — Privacidade',lines:[
+  {sp:'',txt:'Alice estava esperando no banheiro. O único lugar sem câmeras.',spr:[{who:'alice',pos:'center'}]},
+  {sp:'Alice',txt:'Encontrou alguma coisa?',spr:[{who:'alice',pos:'center'}]},
+  {sp:'[P]',txt:'Encontrei os bolos. E outras coisas que não esperava.',spr:[{who:'alice',pos:'center',dim:true}]},
+  {sp:'Alice',txt:'O caderno.',spr:[{who:'alice',pos:'center'}]},
+  {sp:'[P]',txt:'Você sabia?',spr:[{who:'alice',pos:'center',dim:true}]},
+  {sp:'Alice',txt:'Suspeitava. A Cilene faz isso há tempo. Não é punição — é controle.',spr:[{who:'alice',pos:'center'}]},
+  {sp:'Alice',txt:'Ela não gosta de gente feliz. Não gosta de vínculos. Não gosta de coisas que criam memória afetiva.',spr:[{who:'alice',pos:'center'}]},
+  {sp:'Alice',txt:'Um bolo de pote é uma memória. Uma festa é um vínculo. Uma risada no corredor é uma ameaça pra ela.',spr:[{who:'alice',pos:'center'}]},
+  {sp:'[P]',txt:'Isso é... perturbador.',spr:[{who:'alice',pos:'center',dim:true}]},
+  {sp:'Alice',txt:'Bem-vindo(a) ao que a gente vive aqui.',spr:[{who:'alice',pos:'center'}]},
+  {sp:'',txt:'O que você vai fazer?',spr:[{who:'alice',pos:'center',dim:true}],
+   choices:[
+    {txt:'"Vamos confrontar ela agora com tudo que temos."',fx:()=>{reputation+=1;},goto:'prepara_confronto'},
+    {txt:'"Precisamos da direção. Isso é sério demais pra resolver sozinhos."',fx:()=>{F.confronted_calmly=true;},goto:'tenta_direcao'},
+    {txt:'"E se a gente aceitar a oferta dela? Ela disse que devolve metade se ficarmos calados."',cl:'danger',fx:()=>{F.accepted_deal=true;reputation-=4;F.manu_trust-=4;},goto:'aceita_acordo'},
+   ]},
+]},
+
+// ══════════════════════════════════════
+// CENA 8: PREPARAÇÃO DO CONFRONTO
+// ══════════════════════════════════════
+{id:'prepara_confronto',bg:'hall',loc:'Corredor — Reunião Rápida',lines:[
+  {sp:'',txt:'Você convocou todo mundo. Maryana, Duda e Alice chegaram em dois minutos.',spr:[{who:'maryana',pos:'cleft'},{who:'alice',pos:'cright'},{who:'duda',pos:'center'}]},
+  {sp:'Duda',txt:'Quantas pistas temos?',spr:[{who:'maryana',pos:'cleft'},{who:'alice',pos:'cright'},{who:'duda',pos:'center'}]},
+  {sp:'Alice',txt:'Fotos, o caderno se você tiver, gravação da câmera se a Maryana cooperar.',spr:[{who:'maryana',pos:'cleft'},{who:'alice',pos:'cright'},{who:'duda',pos:'center'}]},
+  {sp:'Maryana',txt:'Coopero. Mas quero deixar claro: se isso der errado, não estávamos juntos.',spr:[{who:'maryana',pos:'cleft'},{who:'alice',pos:'cright'},{who:'duda',pos:'center'}]},
+  {sp:'[P]',txt:'Isso é sério, Maryana?',spr:[{who:'maryana',pos:'cleft',dim:true},{who:'alice',pos:'cright'},{who:'duda',pos:'center'}]},
+  {sp:'Maryana',txt:'Só sendo honesta. Mas... vou estar lá. Se for preciso.',spr:[{who:'maryana',pos:'cleft'},{who:'alice',pos:'cright'},{who:'duda',pos:'center'}]},
+  {sp:'',txt:'[ir ao confronto final →]',spr:[],goto:'confronto_final'},
+]},
+
+{id:'tenta_direcao',bg:'office',loc:'Sala da Direção',lines:[
+  {sp:'',txt:'Você bateu na porta da direção.',spr:[{who:'aluno',pos:'center'}]},
+  {sp:'Aluno',txt:'A diretora não está. Está em reunião com a Coordenação.',spr:[{who:'aluno',pos:'center'}]},
+  {sp:'[P]',txt:'Reunião com a Coordenação? Com a Cilene?',spr:[{who:'aluno',pos:'center',dim:true}]},
+  {sp:'Aluno',txt:'Exato.',spr:[{who:'aluno',pos:'center'}]},
+  {sp:'',txt:'Você sentiu o chão afundar um pouco.',spr:[]},
+  {sp:'',txt:'Se a diretora está com a Cilene... isso significa que ela pode já saber. Ou pior: estar do lado dela.',spr:[],glitch:true},
+  {sp:'',txt:'[Você vai ter que confrontar a Cilene sem ajuda da direção.]',spr:[],goto:'confronto_final'},
+]},
+
+{id:'aceita_acordo',bg:'hall',loc:'Corredor da Escola',lines:[
+  {sp:'Alice',txt:'...',spr:[{who:'alice',pos:'center'}]},
+  {sp:'Alice',txt:'Você tá sério(a)?',spr:[{who:'alice',pos:'center'}]},
+  {sp:'[P]',txt:'Ela devolve metade. A Manu fica com algo—',spr:[{who:'alice',pos:'center',dim:true}]},
+  {sp:'Alice',txt:'A Manu fica com metade do que é dela. E a Cilene continua fazendo isso com outras pessoas.',spr:[{who:'alice',pos:'center'}]},
+  {sp:'Alice',txt:'Pensa bem no que você tá escolhendo.',spr:[{who:'alice',pos:'center',dim:true}]},
+  {sp:'',txt:'[ir ao acordo com Cilene →]',spr:[],goto:'final_acordo'},
+]},
+
+// ══════════════════════════════════════
+// CENA 9: CONFRONTO FINAL
+// ══════════════════════════════════════
+{id:'confronto_final',bg:'office',loc:'Sala da Coordenação',lines:[
+  {sp:'',txt:'A sala de Cilene estava diferente. Mais escura. Ou era impressão sua.',spr:[{who:'cilene',pos:'center'}]},
+  {sp:'Cilene',txt:'Sabia que você viria.',spr:[{who:'cilene',pos:'center'}]},
+  {sp:'[P]',txt:'Então já sabe por quê estou aqui.',spr:[{who:'cilene',pos:'center',dim:true}]},
+  {sp:'Cilene',txt:'Sim. E vou dizer uma coisa antes que você comece sua pequena acusação.',spr:[{who:'cilene',pos:'center'}]},
+  {sp:'Cilene',txt:'Eu amo essa escola. Cada tijolo. E não vou deixar que vínculos emocionais desordenados destruam o ambiente de estudo.',spr:[{who:'cilene',pos:'center'}]},
+  {sp:'[P]',txt:'Vínculos emocionais. É assim que você chama amizade?',spr:[{who:'cilene',pos:'center',dim:true}]},
+  {sp:'Cilene',txt:'...',spr:[{who:'cilene',pos:'center'}]},
+  {sp:'',txt:'Um longo silêncio.',spr:[]},
+  {sp:'',txt:'Como você vai confrontar ela?',spr:[{who:'cilene',pos:'center',dim:true}],
+   consequence:true,
+   choices:[
+    {txt:'Apresentar todas as pistas com calma e frieza.',fx:()=>{F.revealed_truth=true;F.used_all_clues=true;},goto:'final_bom_check'},
+    {txt:'Partir pra cima verbalmente — grosseria com grosseria.',cl:'danger',fx:()=>{reputation-=3;F.cilene_saw_you=true;},goto:'final_embate_agressivo'},
+    {txt:'"E se eu publicar tudo isso online antes de você agir?"',fx:()=>{reputation-=1;},goto:'final_ameaca_publica'},
+   ]},
+]},
+
+// ══════════════════════════════════════
+// FINAIS
+// ══════════════════════════════════════
+
+// FINAL 1: VITÓRIA COMPLETA (pistas ≥ 4, diplomatico)
+{id:'final_bom_check',bg:'office',loc:'Sala da Coordenação',
+ onEnter:()=>{
+   if(clues>=4 && !F.insulted_manu && !F.threatened_duda){
+     goScene('final_triunfo');
+   } else if(clues>=3){
+     goScene('final_vitoria_parcial');
+   } else {
+     goScene('final_sem_provas');
+   }
+ },lines:[{sp:'',txt:'[calculando consequências...]',spr:[]}]},
+
+{id:'final_triunfo',bg:'good_end',loc:'—',
+ onEnter:()=>showEnding('🎂','FINAL: Doce Justiça',
+  'Com cada pista em mãos, você apresentou um caso irrefutável. A Cilene ficou quieta pela primeira vez em 12 anos. Os bolos foram devolvidos. A direção abriu uma investigação formal sobre o comportamento da coordenadora. Maryana, Duda e Alice estavam lá quando Manu recebeu as caixas de volta — e ela chorou. Não de tristeza. De gratidão.',
+  'Você tratou todo mundo com respeito. Isso abriu portas que arrogância teria fechado. Resultado: o melhor final possível.',true)},
+
+{id:'final_vitoria_parcial',bg:'good_end',loc:'—',
+ onEnter:()=>showEnding('🍮','FINAL: A Meia Vitória',
+  'As provas eram boas mas não impecáveis. A Cilene devolveu os bolos, mas saiu sem punição. A direção "vai analisar o caso". Manu ficou aliviada, mas ambas sabem que a Cilene ainda está lá. Ainda sorria aquele sorriso que não chega nos olhos.',
+  'Algumas de suas escolhas criaram atritos desnecessários. A vitória veio, mas poderia ter sido maior.',false)},
+
+{id:'final_sem_provas',bg:'neutral_end',loc:'—',
+ onEnter:()=>showEnding('😶','FINAL: Sem Provas, Sem Voz',
+  'Você confrontou a Cilene com o coração no lugar certo — mas as mãos vazias. Ela ouviu. Sorriu. E disse que iria "considerar". Os bolos ficaram no depósito mais três dias até um procedimento burocrático ser aberto. A Manu ficou com 12 dos 25 potes. Os outros "já não podiam ser rastreados".',
+  'Boas intenções sem provas chegam até certo ponto. Próxima vez, colete mais.',false)},
+
+// FINAL 2: EMBATE AGRESSIVO
+{id:'final_embate_agressivo',bg:'bad_end',loc:'—',
+ onEnter:()=>showEnding('💢','FINAL: Você Se Perdeu no Caminho',
+  '"Você é uma pessoa horrível, Cilene!" — você disse, e aquelas palavras ecoaram pela sala. Ela chamou a direção. Você levou uma advertência. A Manu ficou sem os bolos e ainda teve que te defender da suspensão. No final, Cilene ganhou. Não porque tinha razão — mas porque você lhe deu exatamente o que ela queria: uma razão pra ser a vítima.',
+  'Raiva sem controle é munição para quem quer te destruir. Ela usou cada palavra sua contra você.',false)},
+
+// FINAL 3: AMEAÇA PÚBLICA
+{id:'final_ameaca_publica',bg:'neutral_end',loc:'—',
+ onEnter:()=>showEnding('📱','FINAL: Viral, Mas Vazio',
+  'Você postou tudo. O caderno, as fotos, os depoimentos. Viralizou no grupo da turma. A Cilene ficou constrangida por dois dias. E então voltou na terça-feira como se nada tivesse acontecido. Os bolos foram devolvidos por pressão social — mas a Manu disse que o sabor ficou diferente. "Quando algo é devolvido por vergonha, não é o mesmo que ser devolvido por justiça", ela disse.',
+  'Você teve o momento viral. Mas a mudança real não veio.',false)},
+
+// FINAL 4: ACORDO
+{id:'final_acordo',bg:'bad_end',loc:'—',
+ onEnter:()=>showEnding('🤝','FINAL: Metade de Nada',
+  'Você aceitou o acordo. A Cilene entregou 12 potes — os mais simples, sem os especiais. Manu ficou grata na superfície. Mas Alice não te falou mais. Duda olhava pra você diferente no corredor. E você sabia por quê: você poderia ter mudado algo. Escolheu não mudar.',
+  'Acordos com quem age de má-fé nunca são acordos — são rendições com outro nome.',false)},
+
+// FINAL 5: ROTA DO INSULTO (se insultou Manu + ameaçou Duda)
+{id:'final_traidor',bg:'bad_end',loc:'—',
+ onEnter:()=>showEnding('💔','FINAL: O Nome Que Ficou',
+  'Os bolos nunca foram recuperados. A Manu nunca disse nada diretamente — mas vocês dois pararam de se falar. Um dia você ouviu ela contando a história pra outra pessoa, e ela disse: "No começo, até meu amigo achou que eu estava errada." Ela não disse seu nome. Não precisava.',
+  'A pior traição não é a que grita. É a que acontece no silêncio do benefício da dúvida dado ao lado errado.',false)},
+
+// FINAL 6: HORROR — CILENE SABIA TUDO
+{id:'final_horror',bg:'horror',loc:'—',
+ onEnter:()=>showEnding('👁️','FINAL: Ela Sempre Soube',
+  'Na segunda-feira seguinte, os itens de outras pessoas tinham desaparecido do depósito. E no lugar deles, uma folha em branco. Só uma frase escrita: "Obrigada pelo acesso." Você nunca entendeu. Mas entendeu uma coisa: a Cilene não estava reagindo ao que você fez. Ela estava esperando que você fizesse exatamente isso.',
+  'Às vezes não somos heróis da história. Somos a peça que o vilão precisava mover.',false)},
+
+];}
+
+// ═══════════════════════════════════════════
+//  ENGINE CORE
+// ═══════════════════════════════════════════
+let SCRIPT=[];
+let SMAP={};
+
+function initScript(){
+  SCRIPT=mkScript();
+  SCRIPT.forEach(s=>{SMAP[s.id]=s;});
+}
+
+function goScene(id,instant){
+  const s=SMAP[id];if(!s)return;
+  if(instant){_runScene(s);}
+  else{
+    fadeIn(()=>{_runScene(s);setTimeout(fadeOut,80);});
+  }
+}
+
+function _runScene(s){
+  if(s.onEnter){s.onEnter();return;}
+  curLines=s.lines;curIdx=0;waitingChoice=false;
+  setBG(s.bg);
+  document.getElementById('hud-loc').textContent=s.loc||'—';
+  if(s.horror)triggerHorror();else clearHorror();
+  renderLine();
+  autoSave(s.id);
+}
+
+// ── render line ──
+function renderLine(){
+  const el=document.getElementById('scene');
+  if(el.style.display==='none'||!el.style.display){return;}
+  if(curIdx>=curLines.length)return;
+  const L=curLines[curIdx];
+
+  // clue
+  if(L.clue&&!clueList.includes(L.clue.name)){
+    clueList.push(L.clue.name);clues++;
+    document.getElementById('hud-clues').textContent=clues;
+    showClue(L.clue.name,L.clue.desc);
+  }
+
+  // sprites
+  renderSprites(L.spr||[]);
+
+  // glitch
+  if(L.glitch)triggerGlitch();
+
+  // horror
+  if(L.horror)triggerHorror();
+
+  // shake
+  if(L.shake)triggerShake();
+
+  // speaker
+  const spName=L.sp==='[P]'?PLAYER:L.sp;
+  const spEl=document.getElementById('speaker');
+  const relEl=document.getElementById('speaker-rel');
+  spEl.textContent=spName||'';
+  relEl.textContent=L.rel||'';
+
+  // choices
+  if(L.choices){
+    waitingChoice=true;
+    typeText(L.txt||'',()=>{
+      document.getElementById('next-ind').style.display='none';
+      if(L.consequence)showConsequence(()=>renderChoices(L.choices));
+      else renderChoices(L.choices);
+    });
+    return;
+  }
+  waitingChoice=false;
+  document.getElementById('next-ind').style.display='';
+  typeText(L.txt,null);
+
+  // auto-goto (last line with goto)
+  if(L.goto&&!L.choices){
+    // will fire after text types and advance is called
+  }
+}
+
+function advance(){
+  if(waitingChoice)return;
+  if(typing){skipType();return;}
+  const L=curLines[curIdx];
+  curIdx++;
+  if(L&&L.goto&&!L.choices){goScene(L.goto);return;}
+  if(curIdx>=curLines.length){
+    // check if scene has natural next
+    return;
+  }
+  renderLine();
+}
+
+// ── choices ──
+function renderChoices(choices){
+  const c=document.getElementById('choices');
+  c.innerHTML='';c.style.display='flex';
+  choices.forEach(ch=>{
+    const b=document.createElement('button');
+    b.className='cbtn'+(ch.cl?' '+ch.cl:'');
+    b.textContent=ch.txt;
+    b.onclick=()=>{
+      c.style.display='none';c.innerHTML='';
+      waitingChoice=false;
+      if(ch.fx)ch.fx();
+      updateRepHUD();
+      if(ch.goto)goScene(ch.goto);
+      else{curIdx++;renderLine();}
+    };
+    c.appendChild(b);
+  });
+}
+
+function showConsequence(cb){
+  const ov=document.getElementById('cq-overlay');
+  ov.style.display='block';ov.classList.add('on');
+  setTimeout(()=>{ov.classList.remove('on');setTimeout(()=>{ov.style.display='none';cb();},400);},2800);
+}
+
+// ── typing ──
+function typeText(txt,done){
+  const el=document.getElementById('dialogue');
+  const resolved=txt.replace(/\[P\]/g,PLAYER);
+  el.textContent='';typing=true;
+  let i=0;clearInterval(typeTimer);
+  typeTimer=setInterval(()=>{
+    if(i<resolved.length){el.textContent+=resolved[i++];}
+    else{clearInterval(typeTimer);typing=false;if(done)done();}
+  },22);
+}
+
+function skipType(){
+  clearInterval(typeTimer);typing=false;
+  const L=curLines[curIdx];
+  if(!L)return;
+  document.getElementById('dialogue').textContent=L.txt.replace(/\[P\]/g,PLAYER);
+  if(L.choices){waitingChoice=true;document.getElementById('next-ind').style.display='none';if(L.consequence)showConsequence(()=>renderChoices(L.choices));else renderChoices(L.choices);}
+}
+
+// ── sprites ──
+function renderSprites(list){
+  const c=document.getElementById('sprites');c.innerHTML='';
+  list.forEach(s=>{
+    const info=SPR[s.who];if(!info||info.none)return;
+    const w=document.createElement('div');
+    w.className='spr pos-'+(s.pos||'center')+(s.dim?' dim':'');
+
+    if(info.img){
+      const img=document.createElement('img');
+      img.src=info.img;img.alt=info.name;
+      img.onerror=()=>{w.removeChild(img);w.appendChild(mkSil(s.dim));};
+      w.appendChild(img);
+    } else if(info.sil){
+      w.appendChild(mkSil(s.dim));
+    }
+    c.appendChild(w);
+    // entrance animation only for center
+    if(s.pos==='center')w.classList.add('enter');
+  });
+}
+
+function mkSil(dim){
+  const d=document.createElement('div');
+  d.className='silhouette'+(dim?' dim':'');
+  d.innerHTML='<div class="sil-body"><div class="sil-gloss"></div></div><div class="sil-head"></div>';
+  return d;
+}
+
+// ── bg ──
+function setBG(key){document.getElementById('bg').style.background=BG[key]||BG.hall;}
+
+// ── horror fx ──
+function triggerHorror(){
+  document.getElementById('horror-overlay').classList.add('on');
+  document.getElementById('static-overlay').classList.add('on');
+  setTimeout(()=>{document.getElementById('static-overlay').classList.remove('on');},1200);
+}
+function clearHorror(){
+  document.getElementById('horror-overlay').classList.remove('on');
+  document.getElementById('static-overlay').classList.remove('on');
+}
+function triggerGlitch(){
+  document.getElementById('G').classList.add('glitch-active');
+  document.getElementById('red-flash').classList.add('on');
+  setTimeout(()=>{
+    document.getElementById('G').classList.remove('glitch-active');
+    document.getElementById('red-flash').classList.remove('on');
+  },600);
+}
+function triggerShake(){
+  const spr=document.querySelector('#sprites .spr.pos-center');
+  if(spr){spr.classList.add('shake');setTimeout(()=>spr.classList.remove('shake'),400);}
+}
+
+// ── clue notification ──
+function showClue(name,desc){
+  const el=document.getElementById('clue-notif');
+  document.getElementById('cn-name').textContent=name;
+  document.getElementById('cn-desc').textContent=desc;
+  el.classList.add('on');
+  setTimeout(()=>el.classList.remove('on'),4500);
+}
+
+// ── transitions ──
+function fadeIn(cb){
+  const w=document.getElementById('wipe');w.classList.add('in');
+  setTimeout(()=>{cb();},550);
+}
+function fadeOut(){
+  document.getElementById('wipe').classList.remove('in');
+}
+
+// ── hud ──
+function updateRepHUD(){
+  const el=document.getElementById('hud-rep');
+  el.textContent=(reputation>=0?'+':'')+reputation;
+  el.style.color=reputation>=0?'var(--pk)':'#f87171';
+}
+
+// ── save / load ──
+function autoSave(sceneId){
+  try{
+    const d={player:PLAYER,scene:sceneId,clues,clueList,F,reputation,ts:Date.now()};
+    localStorage.setItem('manu2_save',JSON.stringify(d));
+    const t=document.getElementById('save-toast');t.classList.add('on');
+    setTimeout(()=>t.classList.remove('on'),2000);
+  }catch(e){}
+}
+
+function tryLoad(){
+  try{
+    const raw=localStorage.getItem('manu2_save');
+    if(!raw){alert('Nenhuma partida salva encontrada.');return;}
+    const d=JSON.parse(raw);
+    PLAYER=d.player||'você';clues=d.clues||0;clueList=d.clueList||[];
+    reputation=d.reputation||0;F=Object.assign({},F,d.F||{});
+    initScript();showSceneView();
+    document.getElementById('hud-clues').textContent=clues;
+    updateRepHUD();
+    goScene(d.scene||'abertura',true);
+  }catch(e){alert('Erro ao carregar partida.');}
+}
+
+// ── ending ──
+function showEnding(badge,title,text,good){
+  hideAll();
+  const el=document.getElementById('ending');
+  document.getElementById('end-badge').textContent=badge;
+  document.getElementById('end-title').textContent=title;
+  document.getElementById('end-text').textContent=text;
+  const cq=document.getElementById('end-consequence');
+  cq.textContent=good?'★ Esse é um dos melhores finais possíveis.':'↻ Suas escolhas levaram até aqui. Tente de novo.';
+  el.style.background=good
+    ?'radial-gradient(ellipse at center,#001a0d 0%,#000 100%)'
+    :'radial-gradient(ellipse at center,#1a0000 0%,#000 100%)';
+  el.style.display='flex';
+}
+
+function restart(){
+  clues=0;clueList=[];reputation=0;
+  F={manu_trust:10,maryana_trust:10,duda_trust:10,alice_trust:10,insulted_manu:false,threatened_duda:false,betrayed_maryana:false,found_secret:false,used_all_clues:false,sabotaged:false,confronted_calmly:false,accepted_deal:false,revealed_truth:false,horror_unlocked:false,cilene_saw_you:false,first_choice_done:false};
+  try{localStorage.removeItem('manu2_save');}catch(e){}
+  hideAll();
+  document.getElementById('mainmenu').style.display='flex';
+}
+function goMenu(){restart();}
+
+// ── flow ──
+function hideAll(){
+  ['loading','disclaimer','mainmenu','howtoplay','namescreen','scene','ending'].forEach(id=>{
+    const el=document.getElementById(id);
+    el.style.display='none';el.style.opacity='';el.classList&&el.classList.remove('on');
+  });
+  document.getElementById('choices').style.display='none';
+  document.getElementById('choices').innerHTML='';
+}
+
+function showSceneView(){
+  hideAll();
+  document.getElementById('scene').style.display='block';
+  updateRepHUD();
+}
+
+function goNameScreen(){hideAll();document.getElementById('namescreen').style.display='flex';}
+function showHTP(){document.getElementById('howtoplay').style.display='flex';}
+function hideHTP(){document.getElementById('howtoplay').style.display='none';}
+
+function confirmName(){
+  const v=document.getElementById('nameInput').value.trim();
+  PLAYER=v||'você';
+  initScript();showSceneView();
+  goScene('abertura',true);
+}
+
+// ── flag check: special endings trigger ──
+// Called after deposito scenes to route horror/traitor
+function checkSpecialEnding(){
+  if(F.insulted_manu && F.threatened_duda){
+    goScene('final_traidor');return true;
+  }
+  if(F.horror_unlocked && F.cilene_saw_you){
+    goScene('final_horror');return true;
+  }
+  return false;
+}
+
+// Patch deposito scenes ending to check flags before confronto
+const _origDeposito1End=()=>{
+  if(!checkSpecialEnding()) goScene('prepara_confronto');
+};
+
+// ── keyboard ──
+document.addEventListener('keydown',e=>{
+  if((e.code==='Space'||e.code==='Enter')&&document.getElementById('scene').style.display==='block'){
+    e.preventDefault();advance();
+  }
+});
+document.getElementById('nameInput').addEventListener('keydown',e=>{if(e.code==='Enter')confirmName();});
+
+// ── loading ──
+const LMSGS=['inicializando memórias...','carregando os potes...','preparando a massa...','aquecendo o forno...','montando as camadas...','adicionando brigadeiro...','detectando Cilenes nas proximidades...','quase pronto...'];
+window.addEventListener('load',()=>{
+  const bar=document.getElementById('lbar');
+  const msg=document.getElementById('lmsg');
+  let p=0,mi=0;
+  const iv=setInterval(()=>{
+    p+=Math.random()*15+8;if(p>100)p=100;
+    bar.style.width=p+'%';
+    const ni=Math.floor((p/100)*LMSGS.length);
+    if(ni!==mi&&ni<LMSGS.length){mi=ni;msg.textContent=LMSGS[ni];}
+    if(p>=100){clearInterval(iv);setTimeout(showDisc,600);}
+  },220);
+});
+
+function showDisc(){
+  const L=document.getElementById('loading');
+  L.style.opacity='0';
+  setTimeout(()=>{
+    L.style.display='none';
+    const D=document.getElementById('disclaimer');
+    D.classList.add('on');
+  },1200);
+}
+
+function passDisclaimer(){
+  const D=document.getElementById('disclaimer');
+  D.classList.remove('on');
+  setTimeout(()=>{
+    D.style.display='none';
+    document.getElementById('mainmenu').style.display='flex';
+  },1500);
+}
+
+// ── Final flag routing also applied in confronto_final choices ──
+// final_bom_check uses onEnter to route based on clues/flags automatically.
+
+</script>
+</body>
+</html>
